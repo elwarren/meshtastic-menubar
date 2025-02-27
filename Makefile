@@ -12,16 +12,16 @@ deps:
 	brew install xbar
 
 install_xbar:
-	cp meshtastic-menubar.py $$HOME/Library/Application\ Support/xbar/plugins/
+	cp meshtastic-menubar.py $$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.5m.py
 
 install_swiftbar:
-	cp meshtastic-menubar.py $$HOME/Library/Application\ Support/SwiftBar/Plugins/
+	cp meshtastic-menubar.py $$HOME/Library/Application\ Support/SwiftBar/Plugins/meshtastic-menubar.5m.py
 
 install: deps check install_xbar
 
 uninstall:
-	rm $$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.py && true
-	rm $$HOME/Library/Application\ Support/SwiftBar/Plugins/meshtastic-menubar.py && true
+	rm $$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.5m.py && true
+	rm $$HOME/Library/Application\ Support/SwiftBar/Plugins/meshtastic-menubar.5m.py && true
 
 check:
 	@date
