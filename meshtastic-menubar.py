@@ -40,12 +40,13 @@ def load_config():
         "log_nodes_csv": "meshtastic-menubar-nodes.csv",
         "log_wifi_report": "meshtastic-menubar-wifi-report.json",
         "log_traceroute_log": "meshtastic-menubar-traceroute.log",
-        "log_dir": "/tmp",
+        "log_dir": get_xdg_path("data_dir"),
         "bitbar": "xbar",
         "font_mono": "Menlo-Regular",
         "interval": 5,
+        "meshtastic_bin": "meshtastic",
     }
-    config_path = get_config_path()
+    config_path = get_xdg_path("config_file")
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
             new_config = load(f.read(), Loader=Loader)
@@ -53,13 +54,35 @@ def load_config():
     return config
 
 
-def get_config_path():
-    if os.environ.get("XDG_CONFIG_HOME"):
-        return os.path.expanduser(
-            f"{os.environ.get('XDG_CONFIG_HOME')}/meshtastic-menubar.yml"
-        )
+def get_xdg_path(dir: str) -> str:
+    if dir == "config_file":
+        if os.environ.get("XDG_CONFIG_HOME"):
+            return os.path.expanduser(
+                f"{os.environ.get('XDG_CONFIG_HOME')}/meshtastic-menubar.yml"
+            )
+        else:
+            return os.path.expanduser(
+                f"{os.environ.get('HOME')}/.meshtastic-menubar.yml"
+            )
+
+    if dir == "data_dir":
+        if os.environ.get("XDG_DATA_DIR"):
+            return os.path.expanduser(
+                f"{os.environ.get('XDG_DATA_DIR')}/meshtastic-menubar"
+            )
+        else:
+            return os.path.expanduser(os.environ.get("HOME"))
+
+
+def recursive_copy(obj: dict | list) -> dict:
+    """Copy each record to a new `dict` but skip any keys named `raw` because they cannot be sesrialized to JSON"""
+
+    if isinstance(obj, dict):
+        return {k: recursive_copy(v) for k, v in obj.items() if k != "raw"}
+    elif isinstance(obj, list):
+        return [recursive_copy(i) for i in obj]
     else:
-        return os.path.expanduser(f"{os.environ.get('HOME')}/.meshtastic-menubar.yml")
+        return obj
 
 
 def seconds_to_dhms(seconds: int) -> tuple[int, int, int, int]:
@@ -241,7 +264,6 @@ def cli(config):
     print("---")
 
     iface = None
-    meshtastic_bin = "meshtastic"
     if config["connection"] == "wifi":
         # TODO is importing late bad style? Trying to reduce imports and speed startup
         try:
@@ -275,6 +297,7 @@ def cli(config):
         except Exception as e:
             print(f"Exception connecting via Serial: {e}")
             no_device = str(e)
+            # TODO Exception connecting via Serial: [Errno 35] Could not exclusively lock port /dev/cu.usbserial-0001: [Errno 35] Resource temporarily unavailable
     else:
         print("No connection method set")
         print("Choose wifi, bluetooth, or serial")
@@ -289,7 +312,7 @@ def cli(config):
     #                  ^^^^^^^^^^^
     # AttributeError: 'NoneType' object has no attribute 'nodes'
 
-    nodes = dict(iface.nodes)
+    nodes = recursive_copy(iface.nodes)
     iface.close()
 
     # log nodes early incase we are debugging and skip gui
@@ -301,13 +324,12 @@ def cli(config):
         ) as f:
             # HACK skipkeys is fix for Position not serializable only on serial not wifi
             f.write(
-                json.dumps({"timestamp": str(ts), "nodes": dict(nodes)}, skipkeys=True)
-                + "\n"
+                json.dumps({"timestamp": str(ts), "nodes": nodes}, skipkeys=True) + "\n"
             )
 
     if config["debug"]:
         print("Environment:\n", json.dumps(dict(os.environ)))
-        print("Nodes:\n", json.dumps(dict(nodes, skipkeys=True)))
+        print("Nodes:\n", json.dumps(nodes))
         exit(0)
 
     nodelist = []
