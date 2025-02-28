@@ -1,9 +1,15 @@
 #!/opt/homebrew/bin/uv run --no-project --with pytap2 --with meshtastic[cli] --python 3.12 --script
-#!/opt/homebrew/bin/uv run --python 3.12 --script
-# TODO env can't find uv on macos #!/usr/bin/env -S uv run --script
 # -*- coding: utf-8 -*-
 #
-# Shows meshtastic node info in your menu bar on macos or linux
+# Show meshtastic nodes and stats in the menubar
+#
+# <xbar.title>Meshtastic Menubar</xbar.title>
+# <xbar.version>v0.6</xbar.version>
+# <xbar.author>elwarren</xbar.author>
+# <xbar.author.github>elwarren</xbar.author.github>
+# <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
+# <xbar.dependencies>python,uv,meshtastic</xbar.dependencies>
+# <xbar.abouturl>https://github.com/elwarren/meshtastic-menubar</xbar.abouturl>
 #
 # /// script
 # requires-python = ">=3.12"
@@ -28,6 +34,8 @@ try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
+
+VERSION = "v0.6"
 
 
 def load_config():
@@ -245,7 +253,6 @@ menu_icon = "iVBORw0KGgoAAAANSUhEUgAAADIAAAAcCAYAAAAjmez3AAAACXBIWXMAAA7DAAAOwwH
 
 
 def cli(config):
-    VERSION = "v0.5"
     # HACK to get the shell bar separators to work in xbar and swiftbar
     B = "|"
     SHELL = "shell"
