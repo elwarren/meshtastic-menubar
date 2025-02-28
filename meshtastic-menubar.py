@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>v0.6</xbar.version>
+# <xbar.version>v0.7</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -35,7 +35,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "v0.6"
+VERSION = "v0.7"
 
 
 def load_config():
@@ -59,6 +59,7 @@ def load_config():
         with open(config_path, "r") as f:
             new_config = load(f.read(), Loader=Loader)
             config.update(new_config)
+    config['file'] = config_path
     return config
 
 
@@ -121,6 +122,8 @@ def print_menu_debug(depth=1):
 
 def print_menu_config(config, depth=1):
     print_menu(f"Config", depth=depth)
+    print_menu(f"Edit Config File: {config['file']} | shell='vi' | terminal=true | param1={config['file']}", depth=depth + 1)
+         
     for param in sorted(config):
         print_menu(f"{param}={config[param]}", depth=depth + 1)
 
@@ -253,6 +256,10 @@ menu_icon = "iVBORw0KGgoAAAANSUhEUgAAADIAAAAcCAYAAAAjmez3AAAACXBIWXMAAA7DAAAOwwH
 
 
 def cli(config):
+    # show menu bar icon asap so that if we throw exception we still have a menu
+    print(f" | templateImage='{menu_icon}'")
+    print("---")
+
     # HACK to get the shell bar separators to work in xbar and swiftbar
     B = "|"
     SHELL = "shell"
@@ -266,19 +273,20 @@ def cli(config):
     else:
         target_url = f"http://{config['wifi_host']}"
 
-    # show menu bar icon asap so that if we throw exception we still have a menu
-    print(f" | templateImage='{menu_icon}'")
-    print("---")
-
-    iface = None
+    nodes = {}
+    # HACK messing with scope we should just have a Class at this point
+    #config['meshtastic_p1'] = "--host"
+    #config['meshtastic_p2'] = config["wifi_host"]
     if config["connection"] == "wifi":
         # TODO is importing late bad style? Trying to reduce imports and speed startup
         try:
             import meshtastic.tcp_interface
 
             iface = meshtastic.tcp_interface.TCPInterface(hostname=config["wifi_host"])
-            meshtastic_p1 = "--host"
-            meshtastic_p2 = config["wifi_host"]
+            nodes = recursive_copy(iface.nodes)
+            iface.close()
+            config['meshtastic_p1'] = "--host"
+            config['meshtastic_p2'] = config["wifi_host"]
         except Exception as e:
             print(f"Exception connecting via Wifi: {e}")
             no_device = str(e)
@@ -289,8 +297,10 @@ def cli(config):
             iface = meshtastic.ble_interface.BLEInterface(
                 address=config["bluetooth_name"]
             )
-            meshtastic_p1 = "--ble"
-            meshtastic_p2 = config["bluetooth_name"]
+            nodes = recursive_copy(iface.nodes)
+            iface.close()
+            config['meshtastic_p1'] = "--ble"
+            config['meshtastic_p2'] = config["bluetooth_name"]
         except Exception as e:
             print(f"Exception connecting via Bluetooth: {e}")
             no_device = str(e)
@@ -299,8 +309,11 @@ def cli(config):
             import meshtastic.serial_interface
 
             iface = meshtastic.serial_interface.SerialInterface(config["serial_port"])
-            meshtastic_p1 = "--port"
-            meshtastic_p2 = config["serial_port"]
+            nodes = recursive_copy(iface.nodes)
+            iface.close()
+
+            config['meshtastic_p1'] = "--port"
+            config['meshtastic_p2'] = config["serial_port"]
         except Exception as e:
             print(f"Exception connecting via Serial: {e}")
             no_device = str(e)
@@ -313,14 +326,6 @@ def cli(config):
         print_menu_config(config, depth=1)
         # should we exit 0 or 1? how does xbar handle this vs swiftbar?
         exit(0)
-
-    # TODO above should avoid iface.nodes exception but need to test
-    #     nodes = dict(iface.nodes)
-    #                  ^^^^^^^^^^^
-    # AttributeError: 'NoneType' object has no attribute 'nodes'
-
-    nodes = recursive_copy(iface.nodes)
-    iface.close()
 
     # log nodes early incase we are debugging and skip gui
     if config["log_nodes_jsonl"]:
@@ -379,21 +384,21 @@ def cli(config):
         # "meshtastic.local" 'meshtastic' --port /dev/cu.usbserial-0001 --sendtext What up?
         # zsh: no matches found: up?
         print(
-            f"----{txt} | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--sendtext' {B} param4='{txt}'"
+            f"----{txt} | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B} param3='--sendtext' {B} param4='{txt}'"
         )
 
     print(f"--{icon['gear']} Device")
     print(
-        f"----Reboot | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B}param3='--reboot'"
+        f"----Reboot | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B}param3='--reboot'"
     )
     print(
-        f"----Shutdown | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B}param3='--shutdown'"
+        f"----Shutdown | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B}param3='--shutdown'"
     )
     print(
-        f"----Tail logs | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B}param3='--noproto'"
+        f"----Tail logs | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B}param3='--noproto'"
     )
     print(
-        f"----BLE Scan | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B}param3='--ble-scan'"
+        f"----BLE Scan | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B}param3='--ble-scan'"
     )
     print(
         f"----json Report | {SHELL}='open' {B} terminal=false {B} param1='{target_url}/json/report'"
@@ -646,24 +651,24 @@ def cli(config):
             node_escaped = node.replace("!", r"\!")
 
         print(
-            f"--Traceroute | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--traceroute' {B} param4='{node_escaped}' {B} param5='|' {B} param6='tee {config['log_dir']}/{config['log_traceroute_log']}'"
+            f"--Traceroute | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B} param3='--traceroute' {B} param4='{node_escaped}' {B} param5='|' {B} param6='tee {config['log_dir']}/{config['log_traceroute_log']}'"
         )
 
         print("--Request")
         print(
-            f"----Request position | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--request-position' {B} param4='--dest' {B} param5='{node_escaped}'"
+            f"----Request position | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B} param3='--request-position' {B} param4='--dest' {B} param5='{node_escaped}'"
         )
 
         print("----Telemetry")
         for telemetry_type in telemetry_types:
             print(
-                f"----{telemetry_type} | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--request-telemetry' {B} param4='{telemetry_type}' {B} param5='--dest' {B} param6='{node_escaped}' "
+                f"----{telemetry_type} | {SHELL}='meshtastic' {B} terminal=true {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B} param3='--request-telemetry' {B} param4='{telemetry_type}' {B} param5='--dest' {B} param6='{node_escaped}' "
             )
 
         print(f"--Send text")
         for txt in txts:
             print(
-                f"----{txt} | terminal=true {B} {SHELL}='meshtastic' {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--sendtext' {B} param4='{txt}' {B} param5='--dest' {B} param6='{node_escaped}'"
+                f"----{txt} | terminal=true {B} {SHELL}='meshtastic' {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B} param3='--sendtext' {B} param4='{txt}' {B} param5='--dest' {B} param6='{node_escaped}'"
             )
 
     if config["log_wifi_report"]:
