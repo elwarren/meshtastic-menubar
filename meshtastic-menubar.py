@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>v0.7</xbar.version>
+# <xbar.version>v0.8</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -35,7 +35,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "v0.7"
+VERSION = "v0.8"
 
 
 def load_config():
@@ -53,6 +53,8 @@ def load_config():
         "font_mono": "Menlo-Regular",
         "interval": 5,
         "meshtastic_bin": "meshtastic",
+        "meshtastic_p1": "--host",
+        "meshtastic_p2": "meshtastic.local",
     }
     config_path = get_xdg_path("config_file")
     if os.path.exists(config_path):
@@ -274,9 +276,6 @@ def cli(config):
         target_url = f"http://{config['wifi_host']}"
 
     nodes = {}
-    # HACK messing with scope we should just have a Class at this point
-    #config['meshtastic_p1'] = "--host"
-    #config['meshtastic_p2'] = config["wifi_host"]
     if config["connection"] == "wifi":
         # TODO is importing late bad style? Trying to reduce imports and speed startup
         try:

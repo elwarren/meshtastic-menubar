@@ -22,3 +22,8 @@ log_traceroute_log: meshtastic-menubar-traceroute.log
 font_mono: Menlo-Regular
 interval: 5
 debug: False
+# meshtastic binary override
+meshtastic_bin: meshtastic
+meshtastic_p1: --host
+meshtastic_p2: meshtastic.local
+
