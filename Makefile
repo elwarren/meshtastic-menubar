@@ -48,5 +48,8 @@ check:
 	@echo "Checking for pip3"
 	pip3 --version || true
 
+	# check version
+	grep -E '^VERSION' meshtastic-menubar.py
+
 run:
 	open -a xbar
