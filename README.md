@@ -27,15 +27,9 @@ Requires a meshtastic device already configured to work with meshtastic-cli befo
 - Install uv
 - uv will install python 3.12 on first run
 - Install xbar
-- Copy `meshtastic-menubar.py` to `$HOME/Library/Application\ Support/xbar/plugins/`
-- Edit `$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.py.var.json` to configure options
+- Copy `meshtastic-menubar.5m.py` to `$HOME/Library/Application\ Support/xbar/plugins/`
+- Edit `$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.5m.py.var.json` to configure options
 - Start xbar
-
-# TODO
-
-- Use config file isnstead of xbar variables
-- Package for standalone install
-- Refactor to use jinja templates
 
 # License 
 
