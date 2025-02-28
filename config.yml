@@ -1,3 +1,13 @@
 bitbar: xbar
-connection: wifi
-
+connection: serial
+serial_port: /dev/cu.usbserial-0001
+debug: False
+use_https: False
+wifi_host: meshtastic.local
+log_nodes_jsonl: meshtastic-menubar-nodes.jsonl
+log_nodes_csv: meshtastic-menubar-nodes.csv
+log_wifi_report: meshtastic-menubar-wifi-report.json
+log_traceroute_log: meshtastic-menubar-traceroute.log
+log_dir: /tmp
+font_mono: Menlo-Regular
+interval: 5

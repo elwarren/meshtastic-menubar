@@ -9,7 +9,6 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "pytap2",
-#     "click",
 #     "pyyaml",
 #     "requests",
 #     "meshtastic[cli]",
@@ -22,7 +21,6 @@ import datetime as dt
 ts = dt.datetime.now()
 import os
 import json
-import click
 import meshtastic
 from yaml import load
 
@@ -30,6 +28,29 @@ try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
+
+
+def load_config():
+    config = {
+        "use_https": False,
+        "wifi_host": "meshtastic.local",
+        "connection": "wifi",
+        "debug": False,
+        "log_nodes_jsonl": "meshtastic-menubar-nodes.jsonl",
+        "log_nodes_csv": "meshtastic-menubar-nodes.csv",
+        "log_wifi_report": "meshtastic-menubar-wifi-report.json",
+        "log_traceroute_log": "meshtastic-menubar-traceroute.log",
+        "log_dir": "/tmp",
+        "bitbar": "xbar",
+        "font_mono": "Menlo-Regular",
+        "interval": 5,
+    }
+    config_path = get_config_path()
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            new_config = load(f.read(), Loader=Loader)
+            config.update(new_config)
+    return config
 
 
 def get_config_path():
@@ -56,15 +77,6 @@ def seconds_to_dhms(seconds: int) -> tuple[int, int, int, int]:
     return days, hours, minutes, seconds
 
 
-def set_default(ctx, param, value):
-    config_path = get_config_path()
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f:
-            config = load(f.read(), Loader=Loader)
-        ctx.default_map = config
-    return value
-
-
 def print_menu(line, depth=0):
     print("--" * depth + line)
 
@@ -76,10 +88,10 @@ def print_menu_debug(depth=1):
         print_menu(f"{var}={os.environ[var]}", depth=depth + 2)
 
 
-def print_menu_context(ctx, depth=1):
-    print_menu(f"Context", depth=depth)
-    for param in sorted(ctx.params):
-        print_menu(f"{param}={ctx.params[param]}", depth=depth + 1)
+def print_menu_config(config, depth=1):
+    print_menu(f"Config", depth=depth)
+    for param in sorted(config):
+        print_menu(f"{param}={config[param]}", depth=depth + 1)
 
 
 git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
@@ -209,70 +221,7 @@ txts = [
 menu_icon = "iVBORw0KGgoAAAANSUhEUgAAADIAAAAcCAYAAAAjmez3AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAApZJREFUWIXtmE2ITWEYx38zjvFthiFfC5OFaCZFJE2RRCIlysJuFGUxiVkYiylFmWxYTBGbWY2PUhJlwyyFSPmIhOQrYyjEmOHeY3Hcuce5/zPnOfe8d6H86yzuvc/vef7nve857/O+8F8AjAJ2AzUZctQB1W7slK92wAfuA4tTsjXAOSAP9AEr3Vqzqwn4QXAjPjAIHACqjHxniPWBD8BM9zZHlgfcjhjxgTNGfgXwS/CXnDtN0CFh4i1Qb2DHA08EX7haKuBXagkwJAxsNPJdgg1fn4G5bi2XagzwQBQ/beTXEDzcYTb62QeuU+E32TFR9AUw2cDWAi8Fv4PgrRf9fo9j78NqBnKRYjlgtZHvptTsxT+/qek6ADS6sV7UBOCpMHLcyG8SbB8wIxRzUMTcAUZndh/SKVHkMTDOwE4D3gl+ayTOA26JuI7s9gOtpfSB/AksN/LnhbnumNiFwHdRa1l51ouqA14JI4eN/HbBvgamjMC0CeYRMDa9/aJ6RNJ72JrE2cDHCJsH1idw1UCvqHs0vf1Am0WyQWCRkb8i+C4j2wB8ibA5YJWRH9Z04L0w0m7kdwn2GTAxhYedIsdzYFKKHFwQSW4Q7D+S1IAezXLa9MvCx0kr3CLgb8B8Axs3vzvt3v/SLKA/kisPbEgC5wCfhJFWY+F9gn1ItjfOFpHzDTA1DqgCrgroGrbN0gL0GrC03DsI6azw1RMX3CqCrS21B9wUvKtVOW492xYNnAd8FYHWTU6HYF33Seso7TD6iWyPTwgj1m1nPaWDMEDQbriW6vmOhAM8YD/Fw4S0BwGNBP9AIfnezJa1wl34EEHHLJeEJuAuYu4ZVBiM3rjkjtRM0CYlHj95GQtV8iYKsh45/Xv6DTfbUnnkjAuSAAAAAElFTkSuQmCC"
 
 
-@click.group(
-    invoke_without_command=True, context_settings={"auto_envvar_prefix": "menubar"}
-)  # this allows for environment variables
-@click.pass_context
-def cli(ctx):
-    if ctx.invoked_subcommand is None:
-        ctx.invoke(menubar)
-
-
-@cli.command()
-@click.option("--config", default=get_config_path(), type=click.Path())
-@click.option(
-    "--bitbar",
-    default="xbar",
-    help="Which bitbar derivative are we using",
-    type=click.Choice(["xbar", "swiftbar", "argos"]),
-)
-@click.option(
-    "--connection",
-    default="wifi",
-    help="Connection method",
-    type=click.Choice(["wifi", "bluetooth", "serial"]),
-)
-@click.option("--use-https", is_flag=True, default=False, help="Use https over wifi?")
-@click.option(
-    "--wifi-host", default="meshtastic.local", help="Meshtastic host (wifi only)"
-)
-@click.option("--bluetooth-name", default="YOUR_NODE", help="Bluetooth name")
-@click.option(
-    "--serial-port", default="/dev/cu.usbserial-0001", help="Serial port full path"
-)
-@click.option("--interval", default=5, help="Interval in minutes")
-@click.option("--log-dir", default=os.environ.get("HOME"))
-@click.option(
-    "--log-nodes-jsonl",
-    default=".meshtastic-menubar.nodes.jsonl",
-    help="Save nodes to jsonl",
-)
-@click.option("--font-mono", default="Monaco", help="Monospaced font to align columns")
-@click.option(
-    "--log-wifi-report",
-    default=".meshtastic-menubar.report.json",
-    help="Curl and save json report (requires wifi)",
-)
-@click.option(
-    "--log-nodes-csv", default=".meshtastic-menubar.nodes.csv", help="Save nodes to csv"
-)
-@click.option(
-    "--debug",
-    is_flag=True,
-    default=False,
-    help="Save traceroute output to log",
-)
-@click.option("--log-traceroute-log", default=".meshtastic-menubar.traceroute.log")
-@click.pass_context
-def menubar(
-    ctx,
-    **kwargs,
-):
-    if ctx.default_map is None:
-        ctx.default_map = {}
-    # Overwrite default values with command line parameters
-    ctx.default_map.update(kwargs)
-
+def cli(config):
     VERSION = "v0.5"
     # HACK to get the shell bar separators to work in xbar and swiftbar
     B = "|"
@@ -282,10 +231,10 @@ def menubar(
     test_empty = False
 
     # Maybe http saves some battery because https uses more cpu
-    if ctx.params["use_https"]:
-        target_url = f"https://{ctx.params['wifi_host']}"
+    if config["use_https"]:
+        target_url = f"https://{config['wifi_host']}"
     else:
-        target_url = f"http://{ctx.params['wifi_host']}"
+        target_url = f"http://{config['wifi_host']}"
 
     # show menu bar icon asap so that if we throw exception we still have a menu
     print(f" | templateImage='{menu_icon}'")
@@ -293,40 +242,36 @@ def menubar(
 
     iface = None
     meshtastic_bin = "meshtastic"
-    if ctx.params["connection"] == "wifi":
+    if config["connection"] == "wifi":
         # TODO is importing late bad style? Trying to reduce imports and speed startup
         try:
-            import meshtastic.tcp_interface  # as miw
+            import meshtastic.tcp_interface
 
-            iface = meshtastic.tcp_interface.TCPInterface(
-                hostname=ctx.params["wifi_host"]
-            )
+            iface = meshtastic.tcp_interface.TCPInterface(hostname=config["wifi_host"])
             meshtastic_p1 = "--host"
-            meshtastic_p2 = ctx.params["wifi_host"]
+            meshtastic_p2 = config["wifi_host"]
         except Exception as e:
             print(f"Exception connecting via Wifi: {e}")
             no_device = str(e)
-    elif ctx.params["connection"] == "bluetooth":
+    elif config["connection"] == "bluetooth":
         try:
-            import meshtastic.ble_interface  # as mib
+            import meshtastic.ble_interface
 
             iface = meshtastic.ble_interface.BLEInterface(
-                address=ctx.params["bluetooth_name"]
+                address=config["bluetooth_name"]
             )
             meshtastic_p1 = "--ble"
-            meshtastic_p2 = ctx.params["bluetooth_name"]
+            meshtastic_p2 = config["bluetooth_name"]
         except Exception as e:
             print(f"Exception connecting via Bluetooth: {e}")
             no_device = str(e)
-    elif ctx.params["connection"] == "serial":
+    elif config["connection"] == "serial":
         try:
-            import meshtastic.serial_interface  # as mis
+            import meshtastic.serial_interface
 
-            iface = meshtastic.serial_interface.SerialInterface(
-                ctx.params["serial_port"]
-            )
+            iface = meshtastic.serial_interface.SerialInterface(config["serial_port"])
             meshtastic_p1 = "--port"
-            meshtastic_p2 = ctx.params["serial_port"]
+            meshtastic_p2 = config["serial_port"]
         except Exception as e:
             print(f"Exception connecting via Serial: {e}")
             no_device = str(e)
@@ -335,7 +280,7 @@ def menubar(
         print("Choose wifi, bluetooth, or serial")
         no_device = "No connection method set"
         print_menu_debug(depth=0)
-        print_menu_context(ctx, depth=1)
+        print_menu_config(config, depth=1)
         # should we exit 0 or 1? how does xbar handle this vs swiftbar?
         exit(0)
 
@@ -348,9 +293,9 @@ def menubar(
     iface.close()
 
     # log nodes early incase we are debugging and skip gui
-    if ctx.params["log_nodes_jsonl"]:
+    if config["log_nodes_jsonl"]:
         with open(
-            f"{ctx.params['log_dir']}/{ctx.params['log_nodes_jsonl']}",
+            f"{config['log_dir']}/{config['log_nodes_jsonl']}",
             "a",
             encoding="utf-8",
         ) as f:
@@ -360,7 +305,7 @@ def menubar(
                 + "\n"
             )
 
-    if ctx.params["debug"]:
+    if config["debug"]:
         print("Environment:\n", json.dumps(dict(os.environ)))
         print("Nodes:\n", json.dumps(dict(nodes, skipkeys=True)))
         exit(0)
@@ -426,7 +371,7 @@ def menubar(
     )
 
     print_menu_debug(depth=1)
-    print_menu_context(ctx, depth=2)
+    print_menu_config(config, depth=2)
 
     print("-----")
     print(f"--{icon['question']} Help")
@@ -443,7 +388,7 @@ def menubar(
     #
     # back to main menu again
     #
-    print(f"Every: {ctx.params['interval']}m Last Run:")
+    print(f"Every: {config['interval']}m Last Run:")
     print(f"{ts.replace(microsecond=0)}")
     print("---")
 
@@ -485,7 +430,7 @@ def menubar(
                 heard_ago_total_seconds
             )
 
-            if ctx.params["debug"]:
+            if config["debug"]:
                 print(
                     f"heard_ago {heard_ago} = now {ts} - heard_at_dt {heard_at_dt} heard_ago_seconds {heard_ago_total_seconds}"
                 )
@@ -523,12 +468,10 @@ def menubar(
         if first_node:
             first_node = False
             print(
-                f"{icon['globe_mesh']} {node} - {_name_short} | font={ctx.params['font_mono']}"
+                f"{icon['globe_mesh']} {node} - {_name_short} | font={config['font_mono']}"
             )
         else:
-            print(
-                f"{status_icon} {node} - {_name_short} | font={ctx.params['font_mono']}"
-            )
+            print(f"{status_icon} {node} - {_name_short} | font={config['font_mono']}")
 
         #
         # First submenu
@@ -663,18 +606,18 @@ def menubar(
         print(f"--{icon['satellite']} Comms")
 
         # HACK the node id starts with ! which is being interpreted by the shell, need to escape them, vscode is eating this on save somehow https://github.com/swiftbar/SwiftBar/issues/308
-        if ctx.params["bitbar"] == "xbar":
+        if config["bitbar"] == "xbar":
             node_escaped = node.replace("!", r"\!")
-        if ctx.params["bitbar"] == "swiftbar":
+        if config["bitbar"] == "swiftbar":
             node_escaped = node
-        if ctx.params["bitbar"] == "argos":
+        if config["bitbar"] == "argos":
             # TODO unknown shell escape behavior in argos
             node_escaped = node
-        if ctx.params["bitbar"] == "local":
+        if config["bitbar"] == "local":
             node_escaped = node.replace("!", r"\!")
 
         print(
-            f"--Traceroute | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--traceroute' {B} param4='{node_escaped}' {B} param5='|' {B} param6='tee {ctx.params['log_dir']}/{ctx.params['log_traceroute_log']}'"
+            f"--Traceroute | {SHELL}='meshtastic' {B} terminal=true {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--traceroute' {B} param4='{node_escaped}' {B} param5='|' {B} param6='tee {config['log_dir']}/{config['log_traceroute_log']}'"
         )
 
         print("--Request")
@@ -694,11 +637,11 @@ def menubar(
                 f"----{txt} | terminal=true {B} {SHELL}='meshtastic' {B} param1={meshtastic_p1} {B} param2={meshtastic_p2} {B} param3='--sendtext' {B} param4='{txt}' {B} param5='--dest' {B} param6='{node_escaped}'"
             )
 
-    if ctx.params["log_wifi_report"]:
+    if config["log_wifi_report"]:
         import requests
 
         with open(
-            f"{ctx.params['log_dir']}/{ctx.params['log_wifi_report']}",
+            f"{config['log_dir']}/{config['log_wifi_report']}",
             "a",
             encoding="utf-8",
         ) as f:
@@ -714,7 +657,7 @@ def menubar(
                 + "\n"
             )
 
-    if ctx.params["log_nodes_csv"]:
+    if config["log_nodes_csv"]:
         import csv
 
         def flatten_node(node):
@@ -736,7 +679,7 @@ def menubar(
         keys = sorted(list(keys))
 
         with open(
-            f"{ctx.params['log_dir']}/{ctx.params['log_nodes_csv']}",
+            f"{config['log_dir']}/{config['log_nodes_csv']}",
             "w",
             encoding="utf-8",
         ) as csvfile:
@@ -756,4 +699,4 @@ def menubar(
 
 
 if __name__ == "__main__":
-    cli()
+    cli(load_config())

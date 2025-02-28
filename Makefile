@@ -17,7 +17,10 @@ install_xbar:
 install_swiftbar:
 	cp meshtastic-menubar.py $$HOME/Library/Application\ Support/SwiftBar/Plugins/meshtastic-menubar.5m.py
 
-install: deps check install_xbar
+install_config:
+	cp config.yml $$HOME/.meshtastic-menubar.yml
+
+install: deps check install_xbar install_config
 
 uninstall:
 	rm $$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.5m.py && true
@@ -41,3 +44,6 @@ check:
 	@echo "Checking for pip3"
 	pip3 --version && true
 
+run:
+	open -a xbar
+	
