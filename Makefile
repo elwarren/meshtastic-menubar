@@ -8,8 +8,8 @@ clean:
 	rm $$HOME/.meshtastic-menubar.csv || true
 	
 deps:
-	brew install uv
-	brew install xbar
+	HOMEBREW_NO_AUTO_UPDATE=1 brew install uv
+	HOMEBREW_NO_AUTO_UPDATE=1 brew install xbar
 
 install_xbar:
 	cp meshtastic-menubar.py $$HOME/Library/Application\ Support/xbar/plugins/meshtastic-menubar.5m.py
@@ -33,7 +33,7 @@ uninstall_swiftbar:
 check:
 	@date
 	@echo "Checking for brew"
-	brew --version || true
+	HOMEBREW_NO_AUTO_UPDATE=1 brew --version || true
 	@echo "Checking for uv"
 	uv --version || true
 

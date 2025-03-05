@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>v0.8</xbar.version>
+# <xbar.version>v0.9</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -35,14 +35,16 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "v0.8"
+VERSION = "v0.9"
 
 
-def load_config():
+def load_config() -> dict:
+    """Returns dict with config paramaters. Sets defaults, then overrides with params from file."""
+
     config = {
-        "use_https": False,
-        "wifi_host": "meshtastic.local",
         "connection": "wifi",
+        "wifi_host": "meshtastic.local",
+        "use_https": False,
         "debug": False,
         "log_nodes_jsonl": "meshtastic-menubar-nodes.jsonl",
         "log_nodes_csv": "meshtastic-menubar-nodes.csv",
@@ -56,17 +58,19 @@ def load_config():
         "meshtastic_p1": "--host",
         "meshtastic_p2": "meshtastic.local",
     }
-    config_path = get_xdg_path("config_file")
+    config_path = get_xdg_path(file_type="config_file")
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
             new_config = load(f.read(), Loader=Loader)
             config.update(new_config)
-    config['file'] = config_path
+    config["file"] = config_path
     return config
 
 
-def get_xdg_path(dir: str) -> str:
-    if dir == "config_file":
+def get_xdg_path(file_type: str) -> str:
+    """Return file path for config file in $XDG_CONFIG_HOME if it exists else $HOME"""
+
+    if file_type == "config_file":
         if os.environ.get("XDG_CONFIG_HOME"):
             return os.path.expanduser(
                 f"{os.environ.get('XDG_CONFIG_HOME')}/meshtastic-menubar.yml"
@@ -76,7 +80,7 @@ def get_xdg_path(dir: str) -> str:
                 f"{os.environ.get('HOME')}/.meshtastic-menubar.yml"
             )
 
-    if dir == "data_dir":
+    if file_type == "data_dir":
         if os.environ.get("XDG_DATA_DIR"):
             return os.path.expanduser(
                 f"{os.environ.get('XDG_DATA_DIR')}/meshtastic-menubar"
@@ -111,23 +115,33 @@ def seconds_to_dhms(seconds: int) -> tuple[int, int, int, int]:
     return days, hours, minutes, seconds
 
 
-def print_menu(line, depth=0):
-    print("--" * depth + line)
+def menu_line(line: str, depth: int = 0) -> str:
+    """Build a bitbar menu line at variable depths"""
+    return "--" * depth + line
 
 
-def print_menu_debug(depth=1):
-    print_menu(f"{icon['exclaim']} Debug", depth)
-    print_menu("Environment:", depth=depth + 1)
+def print_menu_debug(depth: int = 1):
+    """Build and display Debug submenu"""
+
+    print(menu_line(f"{icon['exclaim']} Debug", depth))
+    print(menu_line("Environment:", depth=depth + 1))
     for var in sorted(os.environ):
-        print_menu(f"{var}={os.environ[var]}", depth=depth + 2)
+        print(menu_line(f"{var}={os.environ[var]}", depth=depth + 2))
 
 
-def print_menu_config(config, depth=1):
-    print_menu(f"Config", depth=depth)
-    print_menu(f"Edit Config File: {config['file']} | shell='vi' | terminal=true | param1={config['file']}", depth=depth + 1)
-         
+def print_menu_config(config: str, depth: int = 1):
+    """Build and display Configuration submenu"""
+
+    print(menu_line(f"Config", depth=depth))
+    print(
+        menu_line(
+            f"Edit Config File: {config['file']} | shell='vi' | terminal=true | param1={config['file']}",
+            depth=depth + 1,
+        )
+    )
+
     for param in sorted(config):
-        print_menu(f"{param}={config[param]}", depth=depth + 1)
+        print(menu_line(f"{param}={config[param]}", depth=depth + 1))
 
 
 git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
@@ -209,6 +223,7 @@ telemetry_types = [
     "device",
 ]
 
+# TODO move this to optional txt pack that can be loaded without changing code
 txts = [
     "Greetings",
     "Hello world!",
@@ -257,7 +272,9 @@ txts = [
 menu_icon = "iVBORw0KGgoAAAANSUhEUgAAADIAAAAcCAYAAAAjmez3AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAApZJREFUWIXtmE2ITWEYx38zjvFthiFfC5OFaCZFJE2RRCIlysJuFGUxiVkYiylFmWxYTBGbWY2PUhJlwyyFSPmIhOQrYyjEmOHeY3Hcuce5/zPnOfe8d6H86yzuvc/vef7nve857/O+8F8AjAJ2AzUZctQB1W7slK92wAfuA4tTsjXAOSAP9AEr3Vqzqwn4QXAjPjAIHACqjHxniPWBD8BM9zZHlgfcjhjxgTNGfgXwS/CXnDtN0CFh4i1Qb2DHA08EX7haKuBXagkwJAxsNPJdgg1fn4G5bi2XagzwQBQ/beTXEDzcYTb62QeuU+E32TFR9AUw2cDWAi8Fv4PgrRf9fo9j78NqBnKRYjlgtZHvptTsxT+/qek6ADS6sV7UBOCpMHLcyG8SbB8wIxRzUMTcAUZndh/SKVHkMTDOwE4D3gl+ayTOA26JuI7s9gOtpfSB/AksN/LnhbnumNiFwHdRa1l51ouqA14JI4eN/HbBvgamjMC0CeYRMDa9/aJ6RNJ72JrE2cDHCJsH1idw1UCvqHs0vf1Am0WyQWCRkb8i+C4j2wB8ibA5YJWRH9Z04L0w0m7kdwn2GTAxhYedIsdzYFKKHFwQSW4Q7D+S1IAezXLa9MvCx0kr3CLgb8B8Axs3vzvt3v/SLKA/kisPbEgC5wCfhJFWY+F9gn1ItjfOFpHzDTA1DqgCrgroGrbN0gL0GrC03DsI6azw1RMX3CqCrS21B9wUvKtVOW492xYNnAd8FYHWTU6HYF33Seso7TD6iWyPTwgj1m1nPaWDMEDQbriW6vmOhAM8YD/Fw4S0BwGNBP9AIfnezJa1wl34EEHHLJeEJuAuYu4ZVBiM3rjkjtRM0CYlHj95GQtV8iYKsh45/Xv6DTfbUnnkjAuSAAAAAElFTkSuQmCC"
 
 
-def cli(config):
+def cli(config: dict):
+    """This is __main__ code when called as cli vs testing."""
+
     # show menu bar icon asap so that if we throw exception we still have a menu
     print(f" | templateImage='{menu_icon}'")
     print("---")
@@ -270,49 +287,58 @@ def cli(config):
     test_empty = False
 
     # Maybe http saves some battery because https uses more cpu
-    if config["use_https"]:
+    if config.get("use_https"):
         target_url = f"https://{config['wifi_host']}"
     else:
         target_url = f"http://{config['wifi_host']}"
 
     nodes = {}
-    if config["connection"] == "wifi":
+    if config.get("connection") == "wifi":
         # TODO is importing late bad style? Trying to reduce imports and speed startup
         try:
             import meshtastic.tcp_interface
 
-            iface = meshtastic.tcp_interface.TCPInterface(hostname=config["wifi_host"])
+            iface = meshtastic.tcp_interface.TCPInterface(
+                hostname=config.get("wifi_host")
+            )
             nodes = recursive_copy(iface.nodes)
             iface.close()
-            config['meshtastic_p1'] = "--host"
-            config['meshtastic_p2'] = config["wifi_host"]
+            config["meshtastic_p1"] = "--host"
+            config["meshtastic_p2"] = config["wifi_host"]
         except Exception as e:
-            print(f"Exception connecting via Wifi: {e}")
+            print(f"Exception connecting host: {config.get('wifi_host')} via Wifi: {e}")
             no_device = str(e)
-    elif config["connection"] == "bluetooth":
+            # TODO hostname does not resolve, usually because using serial or bluetooth
+            # Exception connecting via Wifi: [Errno 8] nodename nor servname provided, or not known
+            # [Errno 8] nodename nor servname provided, or not known
+
+    elif config.get("connection") == "bluetooth":
         try:
             import meshtastic.ble_interface
 
             iface = meshtastic.ble_interface.BLEInterface(
-                address=config["bluetooth_name"]
+                address=config.get("bluetooth_name")
             )
             nodes = recursive_copy(iface.nodes)
             iface.close()
-            config['meshtastic_p1'] = "--ble"
-            config['meshtastic_p2'] = config["bluetooth_name"]
+            config["meshtastic_p1"] = "--ble"
+            config["meshtastic_p2"] = config.get("bluetooth_name")
         except Exception as e:
             print(f"Exception connecting via Bluetooth: {e}")
             no_device = str(e)
-    elif config["connection"] == "serial":
+
+    elif config.get("connection") == "serial":
         try:
             import meshtastic.serial_interface
 
-            iface = meshtastic.serial_interface.SerialInterface(config["serial_port"])
+            iface = meshtastic.serial_interface.SerialInterface(
+                config.get("serial_port")
+            )
             nodes = recursive_copy(iface.nodes)
             iface.close()
 
-            config['meshtastic_p1'] = "--port"
-            config['meshtastic_p2'] = config["serial_port"]
+            config["meshtastic_p1"] = "--port"
+            config["meshtastic_p2"] = config.get("serial_port")
         except Exception as e:
             print(f"Exception connecting via Serial: {e}")
             no_device = str(e)
@@ -327,18 +353,20 @@ def cli(config):
         exit(0)
 
     # log nodes early incase we are debugging and skip gui
-    if config["log_nodes_jsonl"]:
+    if config.get("log_nodes_jsonl"):
         with open(
-            f"{config['log_dir']}/{config['log_nodes_jsonl']}",
+            f"{config.get('log_dir')}/{config.get('log_nodes_jsonl')}",
             "a",
             encoding="utf-8",
         ) as f:
             # HACK skipkeys is fix for Position not serializable only on serial not wifi
             f.write(
-                json.dumps({"timestamp": str(ts), "nodes": nodes}, skipkeys=True) + "\n"
+                # json.dumps({"timestamp": str(ts), "nodes": nodes}, skipkeys=True) + "\n"
+                json.dumps({"timestamp": str(ts), "nodes": nodes})
+                + "\n"
             )
 
-    if config["debug"]:
+    if config.get("debug"):
         print("Environment:\n", json.dumps(dict(os.environ)))
         print("Nodes:\n", json.dumps(nodes))
         exit(0)
@@ -670,7 +698,7 @@ def cli(config):
                 f"----{txt} | terminal=true {B} {SHELL}='meshtastic' {B} param1={config['meshtastic_p1']} {B} param2={config['meshtastic_p2']} {B} param3='--sendtext' {B} param4='{txt}' {B} param5='--dest' {B} param6='{node_escaped}'"
             )
 
-    if config["log_wifi_report"]:
+    if config.get("log_wifi_report") and config.get("use_wifi"):
         import requests
 
         with open(
@@ -690,7 +718,7 @@ def cli(config):
                 + "\n"
             )
 
-    if config["log_nodes_csv"]:
+    if config.get("log_nodes_csv"):
         import csv
 
         def flatten_node(node):
