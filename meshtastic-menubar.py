@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>v0.9</xbar.version>
+# <xbar.version>v0.10</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -35,7 +35,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "v0.9"
+VERSION = "v0.10"
 
 
 def load_config() -> dict:
@@ -50,43 +50,21 @@ def load_config() -> dict:
         "log_nodes_csv": "meshtastic-menubar-nodes.csv",
         "log_wifi_report": "meshtastic-menubar-wifi-report.json",
         "log_traceroute_log": "meshtastic-menubar-traceroute.log",
-        "log_dir": get_xdg_path("data_dir"),
+        "log_dir": os.environ.get("HOME"),
         "bitbar": "xbar",
         "font_mono": "Menlo-Regular",
         "interval": 5,
         "meshtastic_bin": "meshtastic",
         "meshtastic_p1": "--host",
         "meshtastic_p2": "meshtastic.local",
+        "config_file": f"{os.environ.get('HOME')}/.meshtastic-menubar.yml",
     }
-    config_path = get_xdg_path(file_type="config_file")
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f:
+
+    if os.path.exists(config["config_file"]):
+        with open(config["config_file"], "r") as f:
             new_config = load(f.read(), Loader=Loader)
             config.update(new_config)
-    config["file"] = config_path
     return config
-
-
-def get_xdg_path(file_type: str) -> str:
-    """Return file path for config file in $XDG_CONFIG_HOME if it exists else $HOME"""
-
-    if file_type == "config_file":
-        if os.environ.get("XDG_CONFIG_HOME"):
-            return os.path.expanduser(
-                f"{os.environ.get('XDG_CONFIG_HOME')}/meshtastic-menubar.yml"
-            )
-        else:
-            return os.path.expanduser(
-                f"{os.environ.get('HOME')}/.meshtastic-menubar.yml"
-            )
-
-    if file_type == "data_dir":
-        if os.environ.get("XDG_DATA_DIR"):
-            return os.path.expanduser(
-                f"{os.environ.get('XDG_DATA_DIR')}/meshtastic-menubar"
-            )
-        else:
-            return os.path.expanduser(os.environ.get("HOME"))
 
 
 def recursive_copy(obj: dict | list) -> dict:
@@ -134,6 +112,7 @@ def print_menu_environment(depth: int = 1):
     for var in sorted(os.environ):
         print(menu_line(f"{var}={os.environ[var]}", depth=depth + 1))
 
+
 def print_menu_nodelist(nodelist: str, depth: int = 1):
     """Build and display Debug Nodelist submenu"""
 
@@ -148,7 +127,7 @@ def print_menu_config(config: str, depth: int = 1):
     print(menu_line(f"Config", depth=depth))
     print(
         menu_line(
-            f"Edit Config File: {config['file']} | shell='vi' | terminal=true | param1={config['file']}",
+            f"Edit Config File: {config['config_file']} | shell='vi' | terminal=true | param1={config['config_file']}",
             depth=depth + 1,
         )
     )
