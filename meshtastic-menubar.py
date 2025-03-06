@@ -92,6 +92,7 @@ def get_xdg_path(file_type: str) -> str:
 def recursive_copy(obj: dict | list) -> dict:
     """Copy each record to a new `dict` but skip any keys named `raw` because they cannot be sesrialized to JSON"""
 
+    # print(type(obj), obj)
     if isinstance(obj, dict):
         return {k: recursive_copy(v) for k, v in obj.items() if k != "raw"}
     elif isinstance(obj, list):
@@ -124,9 +125,21 @@ def print_menu_debug(depth: int = 1):
     """Build and display Debug submenu"""
 
     print(menu_line(f"{icon['exclaim']} Debug", depth))
-    print(menu_line("Environment:", depth=depth + 1))
+
+
+def print_menu_environment(depth: int = 1):
+    """Build and display Debug Nodelist submenu"""
+
+    print(menu_line("Environment", depth=depth))
     for var in sorted(os.environ):
-        print(menu_line(f"{var}={os.environ[var]}", depth=depth + 2))
+        print(menu_line(f"{var}={os.environ[var]}", depth=depth + 1))
+
+def print_menu_nodelist(nodelist: str, depth: int = 1):
+    """Build and display Debug Nodelist submenu"""
+
+    print(menu_line("Node List", depth=depth))
+    for nodelist_node in nodelist:
+        print(menu_line(f"Node: {nodelist_node}", depth=depth + 1))
 
 
 def print_menu_config(config: str, depth: int = 1):
@@ -312,17 +325,17 @@ def cli(config: dict):
             # Exception connecting via Wifi: [Errno 8] nodename nor servname provided, or not known
             # [Errno 8] nodename nor servname provided, or not known
 
-    elif config.get("connection") == "bluetooth":
+    elif config.get("connection") == "ble":
         try:
             import meshtastic.ble_interface
 
             iface = meshtastic.ble_interface.BLEInterface(
-                address=config.get("bluetooth_name")
+                address=config.get("ble_name")
             )
             nodes = recursive_copy(iface.nodes)
             iface.close()
             config["meshtastic_p1"] = "--ble"
-            config["meshtastic_p2"] = config.get("bluetooth_name")
+            config["meshtastic_p2"] = config.get("ble_name")
         except Exception as e:
             print(f"Exception connecting via Bluetooth: {e}")
             no_device = str(e)
@@ -345,9 +358,10 @@ def cli(config: dict):
             # TODO Exception connecting via Serial: [Errno 35] Could not exclusively lock port /dev/cu.usbserial-0001: [Errno 35] Resource temporarily unavailable
     else:
         print("No connection method set")
-        print("Choose wifi, bluetooth, or serial")
+        print("Choose wifi, ble, or serial")
         no_device = "No connection method set"
         print_menu_debug(depth=0)
+        print_menu_environment(depth=1)
         print_menu_config(config, depth=1)
         # should we exit 0 or 1? how does xbar handle this vs swiftbar?
         exit(0)
@@ -432,7 +446,9 @@ def cli(config: dict):
     )
 
     print_menu_debug(depth=1)
+    print_menu_environment(depth=2)
     print_menu_config(config, depth=2)
+    print_menu_nodelist(nodelist, depth=2)
 
     print("-----")
     print(f"--{icon['question']} Help")

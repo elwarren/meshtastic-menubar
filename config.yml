@@ -6,8 +6,8 @@ wifi_host: meshtastic.local
 # serial_port: /dev/cu.usbserial-0001
 use_https: False
 # 
-# connection: bluetooth
-# ble_node: YOUR_NODE
+# connection: ble
+# ble_name: YOUR_NODE
 # 
 # Save files
 #
