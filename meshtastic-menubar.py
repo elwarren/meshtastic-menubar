@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>v0.10</xbar.version>
+# <xbar.version>2025.3.6</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -35,7 +35,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "v0.10"
+VERSION = "2025.3.6"
 
 
 def load_config() -> dict:
@@ -320,21 +320,42 @@ def cli(config: dict):
             no_device = str(e)
 
     elif config.get("connection") == "serial":
-        try:
-            import meshtastic.serial_interface
+        # fail fast if device doesn't exist or path incorrect
+        serial_fail = False
+        if config.get("serial_port"):
+            if os.path.exists(config["serial_port"]):
 
-            iface = meshtastic.serial_interface.SerialInterface(
-                config.get("serial_port")
-            )
-            nodes = recursive_copy(iface.nodes)
-            iface.close()
+                try:
+                    import meshtastic.serial_interface
 
-            config["meshtastic_p1"] = "--port"
-            config["meshtastic_p2"] = config.get("serial_port")
-        except Exception as e:
-            print(f"Exception connecting via Serial: {e}")
-            no_device = str(e)
-            # TODO Exception connecting via Serial: [Errno 35] Could not exclusively lock port /dev/cu.usbserial-0001: [Errno 35] Resource temporarily unavailable
+                    iface = meshtastic.serial_interface.SerialInterface(
+                        config.get("serial_port")
+                    )
+                    nodes = recursive_copy(iface.nodes)
+                    iface.close()
+
+                    config["meshtastic_p1"] = "--port"
+                    config["meshtastic_p2"] = config.get("serial_port")
+                except Exception as e:
+                    print(f"Exception connecting via Serial: {e}")
+                    no_device = str(e)
+                    serial_fail = True
+                    # TODO Exception connecting via Serial: [Errno 35] Could not exclusively lock port /dev/cu.usbserial-0001: [Errno 35] Resource temporarily unavailable
+
+            else:
+                serial_fail = True
+        else:
+            serial_fail = True
+
+        if serial_fail:
+            print(f"Serial device does not exist at: {config.get('serial_port')}")
+            no_device = "No connection method set"
+            print_menu_debug(depth=0)
+            print_menu_environment(depth=1)
+            print_menu_config(config, depth=1)
+            # should we exit 0 or 1? how does xbar handle this vs swiftbar?
+            exit(0)
+
     else:
         print("No connection method set")
         print("Choose wifi, ble, or serial")
