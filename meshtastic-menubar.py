@@ -545,6 +545,79 @@ def calculate_heards(heard_last=None):
     )
 
 
+def print_menu_nodes(nodes):
+    """Display all Nodes and their submenus"""
+
+    # NOTE default lastHeard to zero because relayed nodes do not report and we need this to sort
+    nodelist = sorted(nodes, reverse=True, key=lambda x: nodes[x].get("lastHeard", 0))
+    print("---")
+    print(f"Nodes: {len(nodelist)}")
+
+    first_node = True
+    for id in nodelist:
+        node = nodes[id]
+
+        (
+            status_icon,
+            heard_str,
+            heard_ago,
+            heard_ago_total_seconds,
+            heard_at_dt,
+            heard_last,
+        ) = calculate_heards(heard_last=node.get("lastHeard"))
+
+        #
+        # First line is always our node so it gets a special mesh icon
+        #
+        if first_node:
+            first_node = False
+            print(
+                f"{icon['globe_mesh']} {id} {icon['hash']} {get_node_short_name(node)} | font={config['font_mono']}"
+            )
+        else:
+            print(
+                f"{status_icon} {id} {get_node_hops_icon(node)} {get_node_short_name(node)} | font={config['font_mono']}"
+            )
+
+        #
+        # First submenu
+        #
+        # Heard submenu
+        #
+        print_menu_node_heard(
+            node,
+            status_icon,
+            heard_str,
+            heard_ago,
+            heard_ago_total_seconds,
+            heard_at_dt,
+            heard_last,
+        )
+
+        #
+        # User submenu
+        #
+        if node.get("user"):
+            print_menu_node_user(node)
+
+        #
+        # Metrics menu
+        #
+        if node.get("deviceMetrics"):
+            print_menu_node_device(node)
+
+        #
+        # Position menu
+        #
+        if node.get("position"):
+            print_menu_node_position(node)
+
+        #
+        # Comms menu
+        #
+        print_menu_node_comms(id)
+
+
 git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
 git_zip_url = f"{git_repo_url}/archive/refs/heads/master.zip"
 meshtastic_home_url = "https://meshtastic.org/"
@@ -786,15 +859,6 @@ def cli(config: dict):
         print("Nodes:\n", json.dumps(nodes))
         exit(0)
 
-    nodelist = []
-    if no_device:
-        pass
-    else:
-        # NOTE default lastHeard to zero because relayed nodes do not report and we need this to sort
-        nodelist = sorted(
-            nodes, reverse=True, key=lambda x: nodes[x].get("lastHeard", 0)
-        )
-
     #
     # main menu display output
     #
@@ -824,80 +888,13 @@ def cli(config: dict):
     print("---")
 
     # bail out if no nodes nothing to show
-    if test_empty or no_device or len(nodelist) < 1:
+    if test_empty or no_device or len(nodes) < 1:
         print(f"{icon['police']} No Device or Nodes!")
         # show no_device holds our exception text
         print(no_device)
         exit(0)
 
-    print("---")
-    print(f"Nodes: {len(nodelist)}")
-
-    first_node = True
-    for id in nodelist:
-        node = nodes[id]
-
-        (
-            status_icon,
-            heard_str,
-            heard_ago,
-            heard_ago_total_seconds,
-            heard_at_dt,
-            heard_last,
-        ) = calculate_heards(heard_last=node.get("lastHeard"))
-
-        #
-        # First line is always our node so it gets a special mesh icon
-        #
-        # _name_short = get_node_short_name(node)
-        if first_node:
-            first_node = False
-            print(
-                f"{icon['globe_mesh']} {id} {icon['hash']} {get_node_short_name(node)} | font={config['font_mono']}"
-            )
-        else:
-            print(
-                f"{status_icon} {id} {get_node_hops_icon(node)} {get_node_short_name(node)} | font={config['font_mono']}"
-            )
-
-        #
-        # First submenu
-        #
-        # Heard submenu
-        #
-        print_menu_node_heard(
-            node,
-            status_icon,
-            heard_str,
-            heard_ago,
-            heard_ago_total_seconds,
-            heard_at_dt,
-            heard_last,
-        )
-
-        #
-        # User submenu
-        #
-        if node.get("user"):
-            print_menu_node_user(node)
-
-        #
-        # Metrics menu
-        #
-        if node.get("deviceMetrics"):
-            print_menu_node_device(node)
-
-        #
-        # Position menu
-        #
-        if node.get("position"):
-            print_menu_node_position(node)
-
-        #
-        # Comms menu
-        #
-        print_menu_node_comms(id)
-
+    print_menu_nodes(nodes)
     #
     # End nodes submenu
     #
