@@ -1,6 +1,8 @@
 # meshtastic-menubar
 
-Query your Meshtastic device and show discovered nodes.
+Query your Meshtastic device and show discovered nodes in the menubar on macOS and linux.
+
+![Screenshot1](screenshot-dropdown.png)
 
 # Usage
 
@@ -27,6 +29,8 @@ Clicking on a node will display submenu with device metadata:
 - Comms menu
 
 If these menus are missing then it means the device has not received this data from that node yet. Not every node sends all types.
+
+![Screenshot2](screenshot-submenus.png)
 
 # Install
 
