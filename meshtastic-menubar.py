@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>2025.3.6</xbar.version>
+# <xbar.version>2025.3.7</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -29,13 +29,14 @@ import os
 import json
 import meshtastic
 from yaml import load
+from sys import version as python_version
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
 
-VERSION = "2025.3.6"
+VERSION = "2025.3.7"
 
 
 def load_config() -> dict:
@@ -136,8 +137,20 @@ def print_menu_config(config: str, depth: int = 1):
         print(menu_line(f"{param}={config[param]}", depth=depth + 1))
 
 
+def print_menu_versions(depth: int = 1):
+    """Show package versions submenu"""
+
+    print(menu_line("Versions", depth))
+    print(menu_line(f"Python: {python_version}", depth=depth + 1))
+    print(
+        menu_line(
+            f"Meshtastic: {meshtastic.version.get_active_version()}", depth=depth + 1
+        )
+    )
+
+
 git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
-git_zip_url = "https://github.com/meshtastic/python/archive/refs/heads/master.zip"
+git_zip_url = f"{git_repo_url}/archive/refs/heads/master.zip"
 meshtastic_home_url = "https://meshtastic.org/"
 meshtastic_repo_url = "https://github.com/meshtastic/python/"
 xbar_repo_url = "https://github.com/matryer/xbar/"
@@ -280,9 +293,9 @@ def cli(config: dict):
 
     # Maybe http saves some battery because https uses more cpu
     if config.get("use_https"):
-        target_url = f"https://{config['wifi_host']}"
+        target_url = f"https://{config.get('wifi_host')}"
     else:
-        target_url = f"http://{config['wifi_host']}"
+        target_url = f"http://{config.get('wifi_host')}"
 
     nodes = {}
     if config.get("connection") == "wifi":
@@ -296,7 +309,7 @@ def cli(config: dict):
             nodes = recursive_copy(iface.nodes)
             iface.close()
             config["meshtastic_p1"] = "--host"
-            config["meshtastic_p2"] = config["wifi_host"]
+            config["meshtastic_p2"] = config.get("wifi_host")
         except Exception as e:
             print(f"Exception connecting host: {config.get('wifi_host')} via Wifi: {e}")
             no_device = str(e)
@@ -323,7 +336,7 @@ def cli(config: dict):
         # fail fast if device doesn't exist or path incorrect
         serial_fail = False
         if config.get("serial_port"):
-            if os.path.exists(config["serial_port"]):
+            if os.path.exists(config.get("serial_port")):
 
                 try:
                     import meshtastic.serial_interface
@@ -449,6 +462,7 @@ def cli(config: dict):
     print_menu_environment(depth=2)
     print_menu_config(config, depth=2)
     print_menu_nodelist(nodelist, depth=2)
+    print_menu_versions(depth=2)
 
     print("-----")
     print(f"--{icon['question']} Help")
