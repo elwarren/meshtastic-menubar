@@ -462,29 +462,31 @@ def get_node_short_name(n):
 
 
 def get_node_hops_icon(n):
-    # have to reach into potentially missing keys to build main menu
-    if n.get("hopsAway") == 0:
-        return icon["zero"]
-    elif n.get("hopsAway") == 1:
-        return icon["one"]
-    elif n.get("hopsAway") == 2:
-        return icon["two"]
-    elif n.get("hopsAway") == 3:
-        return icon["three"]
-    elif n.get("hopsAway") == 4:
-        return icon["four"]
-    elif n.get("hopsAway") == 5:
-        return icon["five"]
-    elif n.get("hopsAway") == 6:
-        return icon["six"]
-    elif n.get("hopsAway") == 7:
-        return icon["seven"]
-    elif n.get("hopsAway") == 8:
-        return icon["eight"]
-    elif n.get("hopsAway") == 9:
-        return icon["nine"]
-    else:
-        return icon["star"]
+    """Return an emoji based on hopsAway"""
+
+    match n.get("hopsAway"):
+        case 0:
+            return icon["zero"]
+        case 1:
+            return icon["one"]
+        case 2:
+            return icon["two"]
+        case 3:
+            return icon["three"]
+        case 4:
+            return icon["four"]
+        case 5:
+            return icon["five"]
+        case 6:
+            return icon["six"]
+        case 7:
+            return icon["seven"]
+        case 8:
+            return icon["eight"]
+        case 9:
+            return icon["nine"]
+        case _:
+            return icon["star"]
 
 
 def calculate_heards(heard_last=None):
