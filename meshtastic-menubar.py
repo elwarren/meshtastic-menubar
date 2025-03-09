@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>2025.3.7</xbar.version>
+# <xbar.version>2025.3.9</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -36,7 +36,145 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "2025.3.7"
+VERSION = "2025.3.9"
+
+
+git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
+git_zip_url = f"{git_repo_url}/archive/refs/heads/master.zip"
+meshtastic_home_url = "https://meshtastic.org/"
+meshtastic_repo_url = "https://github.com/meshtastic/python/"
+xbar_repo_url = "https://github.com/matryer/xbar/"
+swiftbar_repo_url = "https://github.com/swiftbar/SwiftBar/"
+argos_repo_url = "https://github.com/p-e-w/argos"
+
+
+def load_icons(file: str = None):
+    """Load icons from file"""
+
+    # TODO will need to define required icon variable names if we expect to load alternate icons
+    return {
+        "green": "🟢",
+        "yellow": "🟡",
+        "orange": "🟠",
+        "red": "🔴",
+        "blue": "🔵",
+        "purple": "🟣",
+        "brown": "🟤",
+        "black": "⚫",
+        "white": "⚪",
+        "police": "🚨",
+        "ticket": "🎫",
+        "person": "👤",
+        "people": "👥",
+        "voltage": "⚡",
+        "battery": "🔋",
+        "battery_low": "🪫",
+        "plug": "🔌",
+        "pager": "📟",
+        "satdish": "📡",
+        "satellite": "🛰️",
+        "telescope": "🔭",
+        "bars": "📶",
+        "hash": "#️⃣",
+        "star": "*️⃣",
+        "zero": "0️⃣",
+        "one": "1️⃣",
+        "two": "2️⃣",
+        "three": "3️⃣",
+        "four": "4️⃣",
+        "five": "5️⃣",
+        "six": "6️⃣",
+        "seven": "7️⃣",
+        "eight": "8️⃣",
+        "nine": "9️⃣",
+        "globe_mesh": "🌐",
+        "globe_america": "🌎",
+        "compass": "🧭",
+        "tent": "⛺",
+        "office": "🏢",
+        "house": "🏠",
+        "gear": "⚙️",
+        "settings": "⚙️",
+        "trash": "🗑️",
+        "about": "🆎",
+        "question": "❓",
+        "exclaim": "❗",
+        "refresh": "🔄",
+        "waffle": "🧇",
+        "pancakes": "🥞",
+        "wave": "👋",
+        "thumbsup": "👍",
+        "thumbsdown": "👎",
+        "victory": "✌️",
+        "horns": "🤘",
+        "ok_hand": "👌",
+        "ok_button": "🆗",
+        "prohibited": "🚫",
+        "one_hundred": "💯",
+        "spider": "🕷️",
+    }
+
+
+def load_telemetry(file: str = None):
+    """Load telemetry types to send from a yaml file or json"""
+
+    # TODO what are valid telemetry types?
+    return [
+        "gps",
+        "battery",
+        "position",
+        "user",
+        "device",
+    ]
+
+
+def load_txts(file: str = None):
+    """Load txt messages to send from a yaml file or json"""
+    # TODO move this to optional txt pack that can be loaded without changing code
+
+    return [
+        "Greetings",
+        "Hello world!",
+        "Hooty hoo!",
+        "Howdy",
+        # TODO nested apostrophes break shell, need function to escape on send
+        "What up?",
+        "New phone who dis?",
+        "Good morning!",
+        "Good night!",
+        "Later",
+        "Enroute",
+        "Arrived",
+        "Negative",
+        "Affirmative",
+        "Yes",
+        "No",
+        "LOL",
+        "ROFL",
+        # "WTF",
+        # "SOS",
+        icon["wave"],
+        icon["thumbsup"],
+        icon["thumbsdown"],
+        icon["victory"],
+        icon["horns"],
+        icon["ok_hand"],
+        icon["prohibited"],
+        icon["one_hundred"],
+        "Eyes on",
+        "Breakfast",
+        "Brunch",
+        "Lunch",
+        "Supper",
+        "Dinner",
+        "Dessert",
+        "Snacks",
+        "Drinks",
+        "Coffee",
+        "Tea",
+        "Beer",
+        "Wine",
+    ]
 
 
 def load_config() -> dict:
@@ -74,6 +212,19 @@ def load_config() -> dict:
         config["target_url"] = f"https://{config.get('wifi_host')}"
     else:
         config["target_url"] = f"http://{config.get('wifi_host')}"
+
+    match config.get("connection"):
+        case "wifi":
+            config["meshtastic_p1"] = "--host"
+            config["meshtastic_p2"] = config.get("wifi_host")
+
+        case "ble":
+            config["meshtastic_p1"] = "--ble"
+            config["meshtastic_p2"] = config.get("ble_name")
+
+        case "serial":
+            config["meshtastic_p1"] = "--port"
+            config["meshtastic_p2"] = config.get("serial_port")
 
     return config
 
@@ -620,182 +771,37 @@ def print_menu_nodes(nodes):
         print_menu_node_comms(id)
 
 
-git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
-git_zip_url = f"{git_repo_url}/archive/refs/heads/master.zip"
-meshtastic_home_url = "https://meshtastic.org/"
-meshtastic_repo_url = "https://github.com/meshtastic/python/"
-xbar_repo_url = "https://github.com/matryer/xbar/"
-swiftbar_repo_url = "https://github.com/swiftbar/SwiftBar/"
-argos_repo_url = "https://github.com/p-e-w/argos"
+def get_iface(config: dict, connection: str = "wifi"):
+    """Initialize meshtastic and return iface object"""
 
-# icons to choose from
-icon = {
-    "green": "🟢",
-    "yellow": "🟡",
-    "orange": "🟠",
-    "red": "🔴",
-    "blue": "🔵",
-    "purple": "🟣",
-    "brown": "🟤",
-    "black": "⚫",
-    "white": "⚪",
-    "police": "🚨",
-    "ticket": "🎫",
-    "person": "👤",
-    "people": "👥",
-    "voltage": "⚡",
-    "battery": "🔋",
-    "battery_low": "🪫",
-    "plug": "🔌",
-    "pager": "📟",
-    "satdish": "📡",
-    "satellite": "🛰️",
-    "telescope": "🔭",
-    "bars": "📶",
-    "hash": "#️⃣",
-    "star": "*️⃣",
-    "zero": "0️⃣",
-    "one": "1️⃣",
-    "two": "2️⃣",
-    "three": "3️⃣",
-    "four": "4️⃣",
-    "five": "5️⃣",
-    "six": "6️⃣",
-    "seven": "7️⃣",
-    "eight": "8️⃣",
-    "nine": "9️⃣",
-    "globe_mesh": "🌐",
-    "globe_america": "🌎",
-    "compass": "🧭",
-    "tent": "⛺",
-    "office": "🏢",
-    "house": "🏠",
-    "gear": "⚙️",
-    "settings": "⚙️",
-    "trash": "🗑️",
-    "about": "🆎",
-    "question": "❓",
-    "exclaim": "❗",
-    "refresh": "🔄",
-    "waffle": "🧇",
-    "pancakes": "🥞",
-    "wave": "👋",
-    "thumbsup": "👍",
-    "thumbsdown": "👎",
-    "victory": "✌️",
-    "horns": "🤘",
-    "ok_hand": "👌",
-    "ok_button": "🆗",
-    "prohibited": "🚫",
-    "one_hundred": "💯",
-    "spider": "🕷️",
-}
+    iface = None
 
-# TODO what are valid telemetry types?
-telemetry_types = [
-    "gps",
-    "battery",
-    "position",
-    "user",
-    "device",
-]
-
-# TODO move this to optional txt pack that can be loaded without changing code
-txts = [
-    "Greetings",
-    "Hello world!",
-    "Hooty hoo!",
-    "Howdy",
-    # TODO nested apostrophes break shell, need function to escape on send
-    "What up?",
-    "New phone who dis?",
-    "Good morning!",
-    "Good night!",
-    "Later",
-    "Enroute",
-    "Arrived",
-    "Negative",
-    "Affirmative",
-    "Yes",
-    "No",
-    "LOL",
-    "ROFL",
-    # "WTF",
-    # "SOS",
-    icon["wave"],
-    icon["thumbsup"],
-    icon["thumbsdown"],
-    icon["victory"],
-    icon["horns"],
-    icon["ok_hand"],
-    icon["prohibited"],
-    icon["one_hundred"],
-    "Eyes on",
-    "Breakfast",
-    "Brunch",
-    "Lunch",
-    "Supper",
-    "Dinner",
-    "Dessert",
-    "Snacks",
-    "Drinks",
-    "Coffee",
-    "Tea",
-    "Beer",
-    "Wine",
-]
-
-
-def cli(config: dict):
-    """This is __main__ code when called as cli vs testing."""
-
-    #
-    # show menu bar icon asap so that if we throw exception we still have a menu
-    #
-    print_menu_icon()
-
-    no_device = False
-    test_empty = False
-
-    #
-    # get meshtastic interface depending on connection type
-    #
-    nodes = {}
-    if config.get("connection") == "wifi":
+    if connection == "wifi":
         # TODO is importing late bad style? Trying to reduce imports and speed startup
         try:
             import meshtastic.tcp_interface
 
-            iface = meshtastic.tcp_interface.TCPInterface(
-                hostname=config.get("wifi_host")
-            )
-            nodes = recursive_copy(iface.nodes)
-            iface.close()
-            config["meshtastic_p1"] = "--host"
-            config["meshtastic_p2"] = config.get("wifi_host")
+            hostname = config.get("wifi_host")
+            iface = meshtastic.tcp_interface.TCPInterface(hostname=hostname)
         except Exception as e:
             print(f"Exception connecting host: {config.get('wifi_host')} via Wifi: {e}")
             no_device = str(e)
-            # TODO hostname does not resolve, usually because using serial or bluetooth
+            # TODO could be wrong or missing hostname but sometimes wifi just doesn't respond. Not sure is mdns, maybe try IP next time
             # Exception connecting via Wifi: [Errno 8] nodename nor servname provided, or not known
             # [Errno 8] nodename nor servname provided, or not known
 
-    elif config.get("connection") == "ble":
+    elif connection == "ble":
         try:
             import meshtastic.ble_interface
 
             iface = meshtastic.ble_interface.BLEInterface(
                 address=config.get("ble_name")
             )
-            nodes = recursive_copy(iface.nodes)
-            iface.close()
-            config["meshtastic_p1"] = "--ble"
-            config["meshtastic_p2"] = config.get("ble_name")
         except Exception as e:
             print(f"Exception connecting via Bluetooth: {e}")
             no_device = str(e)
 
-    elif config.get("connection") == "serial":
+    elif connection == "serial":
         # fail fast if device doesn't exist or path incorrect
         serial_fail = False
         if config.get("serial_port"):
@@ -807,11 +813,6 @@ def cli(config: dict):
                     iface = meshtastic.serial_interface.SerialInterface(
                         config.get("serial_port")
                     )
-                    nodes = recursive_copy(iface.nodes)
-                    iface.close()
-
-                    config["meshtastic_p1"] = "--port"
-                    config["meshtastic_p2"] = config.get("serial_port")
                 except Exception as e:
                     print(f"Exception connecting via Serial: {e}")
                     no_device = str(e)
@@ -832,7 +833,111 @@ def cli(config: dict):
             # should we exit 0 or 1? how does xbar handle this vs swiftbar?
             exit(0)
 
-    else:
+    return iface
+
+
+def get_nodes(config: dict, iface) -> dict:
+    """Get nodes from existing meshtastic connection iface"""
+
+    try:
+        nodes = recursive_copy(iface.nodes)
+    except Exception as e:
+        print(f"Exception getting nodes via Wifi: {e}")
+
+    return nodes
+
+
+def log_wifi_report(config: dict):
+    """Download /json/report from a wifi connected meshtastic device"""
+
+    if config.get("log_wifi_report") and config.get("use_wifi"):
+        import requests
+
+        with open(
+            f"{config['log_dir']}/{config['log_wifi_report']}",
+            "a",
+            encoding="utf-8",
+        ) as f:
+            f.write(
+                json.dumps(
+                    {
+                        "timestamp": str(ts),
+                        "report": requests.get(
+                            f"{config['target_url']}/json/report", timeout=10
+                        ).json(),
+                    }
+                )
+                + "\n"
+            )
+
+
+def log_nodes_csv(config: dict, nodes: dict) -> None:
+    """Write nodes to a CSV file."""
+
+    import csv
+
+    def flatten_node(node):
+        flat_node = {}
+        for key, value in node.items():
+            if isinstance(value, dict):
+                for sub_key, sub_value in value.items():
+                    flat_node[f"{key}_{sub_key}"] = sub_value
+            else:
+                flat_node[key] = value
+        return flat_node
+
+    flattened_nodes = [flatten_node(node) for node in nodes.values()]
+
+    # sort unique keys for header so git diff is consistent
+    keys = set()
+    for node in flattened_nodes:
+        keys.update(node.keys())
+    keys = sorted(list(keys))
+
+    with open(
+        f"{config['log_dir']}/{config['log_nodes_csv']}",
+        "w",
+        encoding="utf-8",
+    ) as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=keys)
+        writer.writeheader()
+        for node in flattened_nodes:
+            writer.writerow(node)
+
+
+def log_nodes_jsonl(config: dict, nodes: dict) -> None:
+    """Append nodes to line delimited json."""
+
+    with open(
+        f"{config.get('log_dir')}/{config.get('log_nodes_jsonl')}",
+        "a",
+        encoding="utf-8",
+    ) as f:
+        # HACK skipkeys is fix for Position not serializable only on serial not wifi
+        f.write(
+            # json.dumps({"timestamp": str(ts), "nodes": nodes}, skipkeys=True) + "\n"
+            json.dumps({"timestamp": str(ts), "nodes": nodes})
+            + "\n"
+        )
+
+
+def cli(config: dict):
+    """This is __main__ code when called as cli vs testing."""
+
+    #
+    # show menu bar icon asap so that if we throw exception we still have a menu
+    #
+    print_menu_icon()
+
+    no_device = False
+    test_empty = False
+
+    #
+    # get meshtastic interface depending on connection type
+    #
+    iface = get_iface(config, config.get("connection"))
+
+    if iface is None:
         print("No connection method set")
         print("Choose wifi, ble, or serial")
         no_device = "No connection method set"
@@ -842,19 +947,7 @@ def cli(config: dict):
         # should we exit 0 or 1? how does xbar handle this vs swiftbar?
         exit(0)
 
-    # log nodes early incase we are debugging and skip gui
-    if config.get("log_nodes_jsonl"):
-        with open(
-            f"{config.get('log_dir')}/{config.get('log_nodes_jsonl')}",
-            "a",
-            encoding="utf-8",
-        ) as f:
-            # HACK skipkeys is fix for Position not serializable only on serial not wifi
-            f.write(
-                # json.dumps({"timestamp": str(ts), "nodes": nodes}, skipkeys=True) + "\n"
-                json.dumps({"timestamp": str(ts), "nodes": nodes})
-                + "\n"
-            )
+    nodes = get_nodes(config, iface)
 
     if config.get("debug"):
         print("Environment:\n", json.dumps(dict(os.environ)))
@@ -904,66 +997,21 @@ def cli(config: dict):
     #
     # Final act
     #
-    if config.get("log_wifi_report") and config.get("use_wifi"):
-        import requests
-
-        with open(
-            f"{config['log_dir']}/{config['log_wifi_report']}",
-            "a",
-            encoding="utf-8",
-        ) as f:
-            f.write(
-                json.dumps(
-                    {
-                        "timestamp": str(ts),
-                        "report": requests.get(
-                            f"{config['target_url']}/json/report", timeout=10
-                        ).json(),
-                    }
-                )
-                + "\n"
-            )
-
+    log_wifi_report(config)
     if config.get("log_nodes_csv"):
-        import csv
+        log_nodes_csv(config, nodes)
+    if config.get("log_nodes_jsonl"):
+        log_nodes_jsonl(config, nodes)
 
-        def flatten_node(node):
-            flat_node = {}
-            for key, value in node.items():
-                if isinstance(value, dict):
-                    for sub_key, sub_value in value.items():
-                        flat_node[f"{key}_{sub_key}"] = sub_value
-                else:
-                    flat_node[key] = value
-            return flat_node
-
-        flattened_nodes = [flatten_node(node) for node in nodes.values()]
-
-        # sort unique keys for header so git diff is consistent
-        keys = set()
-        for node in flattened_nodes:
-            keys.update(node.keys())
-        keys = sorted(list(keys))
-
-        with open(
-            f"{config['log_dir']}/{config['log_nodes_csv']}",
-            "w",
-            encoding="utf-8",
-        ) as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=keys)
-            writer.writeheader()
-            for node in flattened_nodes:
-                writer.writerow(node)
-
+    iface.close
     # currently 13 seconds with uv on m2, not bad when running every 5m, mostly waiting on radio
     print(f"Runtime: {dt.datetime.now() - ts}")
 
-    # OS Error:
-    #   The serial device couldn't be opened, it might be in use by another process.
-    #   Please close any applications or webpages that may be using the device and try again.
-    #
-    # Original error: [Errno 35] Could not exclusively lock port /dev/cu.usbserial-0001: [Errno 35] Resource temporarily unavailable
 
+# TODO globals to move into Class
+telemetry_types = load_telemetry()
+icon = load_icons()
+txts = load_txts()
 
 if __name__ == "__main__":
     config = load_config()
