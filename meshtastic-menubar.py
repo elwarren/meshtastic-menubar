@@ -273,6 +273,9 @@ def clean_string(dirty):
         .replace("[", "_")
         .replace("]", "_")
         .replace("\n", "_")
+        .replace("\x0a", "_")
+        .replace("\x0c", "_")
+        .replace("\x0d", "_")
     )
 
 
@@ -748,11 +751,11 @@ def print_menu_nodes(nodes):
         if first_node:
             first_node = False
             print(
-                f"{icon['globe_mesh']} {id} {icon['hash']} {get_node_short_name(node)} | font={config['font_mono']}"
+                f"{icon['globe_mesh']} {id} {icon['hash']} {clean_string(get_node_short_name(node))} | font={config['font_mono']}"
             )
         else:
             print(
-                f"{status_icon} {id} {get_node_hops_icon(node)} {get_node_short_name(node)} | font={config['font_mono']}"
+                f"{status_icon} {id} {get_node_hops_icon(node)} {clean_string(get_node_short_name(node))} | font={config['font_mono']}"
             )
 
         #
