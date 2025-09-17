@@ -4,7 +4,7 @@
 # Show meshtastic nodes and stats in the menubar
 #
 # <xbar.title>Meshtastic Menubar</xbar.title>
-# <xbar.version>2025.3.9</xbar.version>
+# <xbar.version>2025.9.17</xbar.version>
 # <xbar.author>elwarren</xbar.author>
 # <xbar.author.github>elwarren</xbar.author.github>
 # <xbar.desc>Show meshtastic nodes and stats in the menubar.</xbar.desc>
@@ -36,7 +36,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-VERSION = "2025.3.9"
+VERSION = "2025.9.17"
 
 
 git_repo_url = "https://github.com/elwarren/meshtastic-menubar"
@@ -254,6 +254,26 @@ def seconds_to_dhms(seconds: int) -> tuple[int, int, int, int]:
     seconds = remaining_seconds % 60
 
     return days, hours, minutes, seconds
+
+
+def clean_string(dirty):
+    """Strip shell escape risks from string"""
+
+    return (
+        dirty.replace("!", r"\!")
+        .replace("|", "_")
+        .replace("`", "_")
+        .replace("'", "_")
+        .replace('"', "_")
+        .replace("{", "_")
+        .replace("}", "_")
+        .replace("$", "_")
+        .replace("(", "_")
+        .replace(")", "_")
+        .replace("[", "_")
+        .replace("]", "_")
+        .replace("\n", "_")
+    )
 
 
 def menu_line(line: str, depth: int = 0) -> str:
@@ -483,8 +503,11 @@ def print_menu_node_user(n):
     """Display node User submenu"""
     print("-----")
     print(f"--{icon['ticket']} User")
-    print(f"--Name: {n['user'].get('longName')} | href='{config['target_url']}'")
-    print(f"--Short: {n['user'].get('shortName')} | href='{config['target_url']}'")
+    # print(f"--Name: {n['user'].get('longName')} | href='{config['target_url']}'")
+    print(f"--Name: {clean_string(n['user'].get('longName'))} | href='{config['target_url']}'")
+    # print(f"--Short: {n['user'].get('shortName')} | href='{config['target_url']}'")
+    print(f"--Short: {clean_string(n['user'].get('shortName'))} | href='{config['target_url']}'")
+    # TODO really any of these could be tainted, this code just isn't safe to use
     print(f"--Model: {n['user'].get('hwModel')} | href='{config['target_url']}'")
     print(f"--Role: {n['user'].get('role')} | href='{config['target_url']}'")
     print(f"--PK: {n['user'].get('publicKey')} | href='{config['target_url']}'")
