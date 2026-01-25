@@ -177,3 +177,5 @@ cython_debug/
 *.jsonl
 *.csv
 *.ipynb
+.DS_Store
+uv.lock
